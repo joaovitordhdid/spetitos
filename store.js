@@ -6,6 +6,9 @@
   const KEY = 'spetitos:v1';
   const SESSION_KEY = 'spetitos:owner-session';
   const listeners = new Set();
+  /* Acesso do dono: só o hash PBKDF2-SHA256 (310 mil iterações) fica aqui, nunca a senha.
+     Proteção real exige login no servidor (ex.: Supabase Auth), pois o código roda no navegador. */
+  const DEFAULT_OWNER = { email: 'spetitoslanches@gmail.com', kdf: 'pbkdf2-310000', salt: '01aed4294769936aa6d3fa90c86316bd', passHash: '704fa6f53b785878591d03fcaaf77b68ce5e1f6374c72ef10d206f921e6b674b', configured: true };
 
   const clone = (o) => JSON.parse(JSON.stringify(o));
   const uid = (p) => p + '_' + Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-3);
@@ -35,7 +38,7 @@
       orders: [],
       stockMoves: [],               // {id, productId, qty(+/-), reason, at}
       fiscal: { provider: 'simulado', ambiente: 'homologacao', cnpj: '', ie: '', csc: '', cscId: '', token: '', serie: 1, proximoNumero: 1 },
-      owner: { email: 'dono@spetitos.com', passHash: null, salt: 'spetitos' }, // passHash null => senha padrão "spetitos123"
+      owner: Object.assign({}, DEFAULT_OWNER),
       orderSeq: 1000
     };
   }
@@ -45,6 +48,8 @@
     const raw = safeGet(KEY);
     if (raw) { try { state = JSON.parse(raw); } catch (e) { state = null; } }
     if (!state || !state.products) state = seedState();
+    // acesso antigo (senha padrão ou hash SHA-256 simples) → credenciais do dono definidas no código
+    if (!state.owner || state.owner.kdf !== 'pbkdf2-310000') { state.owner = Object.assign({}, DEFAULT_OWNER); safeSet(KEY, JSON.stringify(state)); }
     // cardápio-base novo publicado: atualiza itens/categorias/loja e mantém pedidos, estoque e acesso
     const sv = (window.SPETITOS_SEED || {}).version || 1;
     if (state.seedVersion !== sv && !state.ownerEdited) {
@@ -60,6 +65,11 @@
   function edited() { state.ownerEdited = true; }
   function emit() { listeners.forEach((fn) => { try { fn(state); } catch (e) { console.error(e); } }); }
 
+  async function pbkdf2(password, salt, iterations = 310000) {
+    const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
+    const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: new TextEncoder().encode(salt), iterations }, key, 256);
+    return Array.from(new Uint8Array(bits)).map((b) => b.toString(16).padStart(2, '0')).join('');
+  }
   async function sha256(text) {
     const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
     return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('');
@@ -153,8 +163,8 @@
     /* ---------- Acesso do dono ---------- */
     async login(email, password) {
       const o = state.owner;
-      const hash = await sha256(o.salt + ':' + password);
-      const expected = o.passHash || (await sha256(o.salt + ':spetitos123'));
+      const hash = await pbkdf2(password, o.salt);
+      const expected = o.passHash;
       const ok = email.trim().toLowerCase() === o.email.toLowerCase() && hash === expected;
       if (ok) safeSet(SESSION_KEY, JSON.stringify({ email: o.email, at: Date.now() }), sessionStorage);
       return ok;
@@ -164,11 +174,13 @@
       const raw = safeGet(SESSION_KEY, sessionStorage); if (!raw) return false;
       try { const s = JSON.parse(raw); return Date.now() - s.at < 8 * 3600 * 1000; } catch (e) { return false; }
     },
-    usingDefaultPassword: () => !state.owner.passHash,
+    usingDefaultPassword: () => !state.owner.configured,
     async changeCredentials(email, newPassword) {
       state.owner.email = email.trim();
       state.owner.salt = uid('s');
-      state.owner.passHash = await sha256(state.owner.salt + ':' + newPassword);
+      state.owner.kdf = 'pbkdf2-310000';
+      state.owner.passHash = await pbkdf2(newPassword, state.owner.salt);
+      state.owner.configured = true;
       save();
     },
 

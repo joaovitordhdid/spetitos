@@ -336,9 +336,11 @@
         c.cpf ? h('span', { class: 'adm-v num' }, 'CPF ' + c.cpf) : '',
         phone ? h('span', { class: 'adm-v row', style: '--gap:8px' }, h('span', { class: 'num adm-select' }, phone),
           wa ? h('a', { href: wa, target: '_blank', rel: 'noopener' }, 'WhatsApp') : '') : ''),
-      h('div', { class: 'adm-kv' }, h('span', { class: 'adm-k' }, 'Entrega'), ...addressLines(a)),
+      o.fulfillment === 'retirada'
+        ? h('div', { class: 'adm-kv' }, h('span', { class: 'adm-k' }, 'Retirada'), h('span', { class: 'adm-v' }, h('strong', {}, 'Cliente retira no balcão')))
+        : h('div', { class: 'adm-kv' }, h('span', { class: 'adm-k' }, 'Entrega'), ...addressLines(a), a.district ? h('span', { class: 'adm-v' }, 'Bairro: ' + a.district) : ''),
       h('div', { class: 'adm-kv' }, h('span', { class: 'adm-k' }, 'Pagamento'),
-        h('span', { class: 'adm-v' }, PAY[p.method] || p.method || '—', p.status ? ' · ' + p.status : ''),
+        h('span', { class: 'adm-v' }, PAY[p.method] || p.method || '—', p.method === 'cartao' && p.cardType ? (p.cardType === 'debito' ? ' de débito' : ' de crédito') : '', p.status ? ' · ' + p.status : ''),
         p.changeFor ? h('span', { class: 'adm-v num' }, 'Troco para ' + money(p.changeFor) + ' (devolver ' + money(Math.max(0, p.changeFor - o.total)) + ')') : '')));
 
     // itens
@@ -1152,7 +1154,7 @@
     const resetBox = h('div', { class: 'stack' });
     if (!ui.confirmReset) resetBox.append(h('div', { class: 'row' }, h('button', { class: 'btn btn--danger', type: 'button', id: 'adm-reset', onclick: () => { ui.confirmReset = true; renderPanel(); document.getElementById('adm-reset-no')?.focus(); } }, 'Restaurar cardápio original')));
     else resetBox.append(h('div', { class: 'adm-confirm', role: 'alert' },
-      h('p', {}, h('strong', {}, 'Isto apaga tudo o que foi feito neste navegador: '), 'produtos, categorias, fotos, pedidos, estoque, configurações da loja e do Pix, e volta o acesso para a senha de fábrica. Não dá para desfazer.'),
+      h('p', {}, h('strong', {}, 'Isto apaga tudo o que foi feito neste navegador: '), 'produtos, categorias, fotos, pedidos, estoque, configurações da loja e do Pix, e volta o acesso para o e-mail e a senha originais do dono. Não dá para desfazer.'),
       h('div', { class: 'row' },
         h('button', { class: 'btn btn--danger btn--sm', type: 'button', id: 'adm-reset-yes', onclick: () => { ui.confirmReset = false; Store.resetAll(); UI.toast('Cardápio original restaurado', { tone: 'warn' }); render(); } }, 'Sim, apagar e restaurar'),
         h('button', { class: 'btn btn--ghost btn--sm', type: 'button', id: 'adm-reset-no', onclick: () => { ui.confirmReset = false; renderPanel(); } }, 'Cancelar'))));
