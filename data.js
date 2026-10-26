@@ -2,7 +2,7 @@
    Fotos: CDN do InstaDelivery. Adicionais dos sanduíches montados a partir da categoria PORÇÕES/CREMES;
    ajuste no painel do dono. Taxa de entrega e pedido mínimo: valores iniciais editáveis. */
 window.SPETITOS_SEED = {
- "version": 2,
+ "version": 3,
  "sharedGroups": {
   "adicionais": {
    "id": "g-adicionais",
@@ -214,7 +214,7 @@ window.SPETITOS_SEED = {
   {
    "id": "p-so-o-basico",
    "catId": "c-burger-special",
-   "name": "Só O Básico",
+   "name": "Só o Básico",
    "desc": "Pão brioche, blend bovino 120g, alface, tomate, molho de ervas",
    "price": 20.0,
    "img": "https://instadelivery-public.nyc3.cdn.digitaloceanspaces.com/itens/175877708668d4cefe333e0_75_75.jpeg",
@@ -247,7 +247,7 @@ window.SPETITOS_SEED = {
   {
    "id": "p-gg-burger",
    "catId": "c-burger-special",
-   "name": "Gg Burger",
+   "name": "GG Burger",
    "desc": "Pão brioche, 2 blends bovinos, mussarela, alface americana, tomate e cebola",
    "price": 35.0,
    "img": "https://instadelivery-public.nyc3.cdn.digitaloceanspaces.com/itens/175877754668d4d0cad206b_75_75.jpeg",
@@ -322,7 +322,7 @@ window.SPETITOS_SEED = {
   {
    "id": "p-o-bbq",
    "catId": "c-burger-special",
-   "name": "O Bbq",
+   "name": "O BBQ",
    "desc": "Pão brioche, molho barbecue, blend bovino 120g, queijo cheddar fatiado",
    "price": 25.0,
    "img": "https://instadelivery-public.nyc3.cdn.digitaloceanspaces.com/itens/175877685468d4ce1686585_75_75.jpeg",
